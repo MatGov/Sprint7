@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # 1. MICROSSERVIÇO: CATÁLOGO DE PRODUTOS
+  catalogo-service:
+    build: ./catalogo-service        # Busca o Dockerfile na pasta
+    container_name: catalogo_agnello
+    ports:
+      - "8081:8081"                  # Mapeia a porta para acesso externo
+    networks:
+      - vinheria-net                 # Conecta à rede interna
+
+  # 2. MICROSSERVIÇO: AVALIAÇÕES
+  avaliacoes-service:
+    build: ./avaliacoes-service
+    container_name: avaliacoes_agnello
+    ports:
+      - "8082:8082"
+    networks:
+      - vinheria-net
+
+  # 3. SERVIÇO DE CI/CD: JENKINS
+  jenkins:
+    image: jenkins/jenkins:lts       # Imagem oficial do Jenkins
+    container_name: jenkins_master
+    privileged: true                 # Necessário para interagir com o Docker do host
+    user: root                       # Permite ao Jenkins rodar comandos Docker
+    ports:
+      - "8080:8080"                  # Porta de acesso à interface web do Jenkins
+      - "50000:50000"                # Porta para agentes de build
+    volumes:
+      - jenkins_home:/var/jenkins_home     # Persistência de dados do Jenkins
+      # ESSENCIAL: Mapeia o socket do Docker para permissão de Build/Deploy
+      - /var/run/docker.sock:/var/run/docker.sock 
+    networks:
+      - vinheria-net
+
+networks:
+  vinheria-net:
+    driver: bridge                   # Define a rede interna para Service Discovery (DNS)
+
+volumes:
+  jenkins_home:                      # Define o volume para persistir os dados do Jenkins
